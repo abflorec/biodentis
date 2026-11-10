@@ -1,0 +1,189 @@
+/* Clinical surfaces share the same paper, ink and action colors as the workspace. */
+.care-layout { grid-template-columns: minmax(0, 1fr); margin-top: 16px; }
+.care-panel {
+  padding: clamp(18px, 3vw, 32px);
+  background: var(--panel);
+  border-color: var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.care-panel-head { margin-bottom: 22px; }
+.care-panel-head h2, .care-odonto-heading h3, .care-procedure h3, .care-dialog h3, .care-radiograph-prompt h3 {
+  color: var(--ink);
+  font-weight: 400;
+}
+.care-panel-head h2 { font-size: 30px; }
+.care-procedure-head h3 { font-size: 23px; overflow-wrap: anywhere; }
+.care-odonto-heading h3, .care-radiograph-prompt h3 { font-size: 21px; }
+.care-kicker { color: var(--brass); font-family: var(--mono); font-weight: 500; letter-spacing: .07em; }
+.care-muted, .care-empty, .care-procedure-head p, .care-summary-hint { color: var(--muted); }
+.care-empty { background: var(--paper); border-color: var(--line); border-radius: 5px; }
+.care-context, .care-payment-summary { background: var(--accent-tint); color: var(--accent-dark); border-radius: 4px; }
+
+.care-navigation {
+  display: flex; width: fit-content; gap: 4px; padding: 4px; margin-top: 24px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 100px;
+}
+.care-navigation button {
+  display: flex; align-items: center; gap: 12px; min-height: 43px; padding: 9px 17px;
+  border: 1px solid transparent; border-radius: 100px; background: transparent;
+  color: var(--muted); font-size: 14px; font-weight: 600;
+}
+.care-navigation button:hover { color: var(--accent-dark); }
+.care-navigation button[aria-pressed="true"] { color: var(--accent-dark); background: var(--panel); border-color: var(--line); }
+.care-navigation button span { color: var(--brass); font: 500 11px var(--mono); }
+
+.care-form { gap: 17px; }
+.care-form label, .care-history-select, .care-procedure-actions label, .care-attach label { gap: 7px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.care-form input:not([type="checkbox"]), .care-form textarea, .care-form select,
+.care-history-select select, .care-procedure-actions select, .care-attach input {
+  min-height: 42px;
+  padding: 9px 11px;
+  border-color: var(--control-line);
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 4px;
+}
+.care-form input[type="checkbox"] { accent-color: var(--accent); }
+.care-form input:disabled, .care-form input[readonly] { background: var(--paper); color: var(--muted); }
+.care-form input::file-selector-button, .care-attach input::file-selector-button {
+  margin-right: 10px; padding: 5px 8px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 3px; color: var(--ink); font: inherit; cursor: pointer;
+}
+.care-panel :focus-visible, .care-dialog :focus-visible { outline-color: var(--accent); }
+.care-history-select { max-width: 380px; margin-bottom: 18px; }
+[data-encounter] > label { max-width: 250px; }
+.care-exam { gap: 16px; }
+.care-exam textarea { min-height: 78px; }
+.care-button { min-height: 41px; padding: 9px 15px; border-radius: 3px; background: var(--accent); }
+.care-button:hover { background: var(--accent-dark); }
+.care-button.secondary { color: var(--accent-dark); background: var(--panel); border-color: var(--control-line); }
+.care-button.secondary:hover { background: var(--accent-tint); border-color: #98b0c5; }
+.care-button.danger { background: #9f3b3b; }
+.care-button.danger:hover { background: #823232; }
+.care-form-error { color: #8a3230; background: #fbefec; border-radius: 4px; }
+
+.care-details { background: var(--paper); border-color: var(--line); border-radius: 8px 2px 8px 8px; }
+.care-details > summary { padding: 14px 16px; color: var(--ink); font-weight: 600; }
+.care-details > summary:hover { color: var(--accent-dark); }
+.care-details > summary::marker { color: var(--accent-dark); }
+.care-details > :not(summary) { margin: 0 16px 16px; }
+.care-summary-hint { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 400; }
+.care-questionnaire-help { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.care-questionnaire { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.care-questionnaire label {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  min-height: 55px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); font-size: 12px;
+}
+.care-questionnaire select { width: 62px; flex-shrink: 0; min-height: 35px; padding: 6px; }
+.care-questionnaire label:has(option[value="yes"]:checked) { background: #fbf1e0; border-color: #d9bd8f; }
+
+.care-odontogram { padding: 18px; background: var(--paper); border-color: var(--line); border-radius: var(--radius); }
+.care-segments { background: var(--paper-deep); border-radius: 100px; }
+.care-segments button { min-height: 31px; padding-inline: 10px; border-radius: 100px; color: var(--muted); }
+.care-segments button[aria-pressed="true"] { color: var(--accent-dark); background: var(--panel); box-shadow: none; }
+.care-tooth-grid { width: 100%; max-width: 900px; margin: 10px auto; }
+.care-tooth-row { min-width: 535px; gap: 3px; }
+.care-tooth { min-height: 52px; font: 500 11px var(--mono); color: var(--muted); gap: 5px; }
+.care-tooth-mark { width: 22px; height: 24px; border-radius: 8px 8px 7px 7px; background: var(--panel); }
+.care-tooth:hover, .care-tooth[aria-pressed="true"] { color: var(--accent-dark); background: var(--accent-tint); border-color: #a8c0d5; }
+
+.care-plan-overview { display: grid; grid-template-columns: 1.15fr repeat(3, minmax(0, 1fr)); gap: 8px; margin: 18px 0; }
+.care-plan-overview > div, .care-cash-metrics > div {
+  min-width: 0; display: grid; gap: 9px; padding: 18px;
+  border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius);
+}
+.care-plan-overview span, .care-cash-metrics span { font-size: 13px; font-weight: 500; color: var(--muted); }
+.care-plan-overview strong, .care-balances dd, .care-cash-metrics strong {
+  font: 400 1.22rem/1.2 var(--mono); color: var(--accent-dark); letter-spacing: -.055em; overflow-wrap: anywhere;
+}
+.care-plan-overview > div:last-child { background: var(--accent-tint); border-color: #cddce7; }
+.care-cash-metrics { gap: 12px; }
+.care-cash-metrics > div { padding: clamp(16px, 2.5vw, 26px); }
+.care-cash-metrics strong { font-size: clamp(1.65rem, 3vw, 2.35rem); }
+.care-cash-metrics small { color: var(--muted); }
+.care-add-procedure { margin-bottom: 20px; }
+.care-add-procedure .care-fields { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); }
+.care-procedure {
+  gap: 14px; padding: clamp(14px, 2.5vw, 24px); margin-top: 16px; scroll-margin-top: 20px;
+  border-color: var(--line); border-radius: var(--radius); background: var(--panel);
+}
+.care-balances { padding: 14px; background: var(--paper); border-radius: 5px; }
+.care-balances dt { color: var(--muted); }
+.care-procedure-actions { grid-template-columns: minmax(180px, 1fr) auto; }
+.care-table { color: var(--ink); }
+.care-table th, .care-table td { padding: 12px; border-color: var(--line); }
+.care-table th { color: var(--brass); background: var(--paper); font-family: var(--mono); font-weight: 600; }
+.care-table small, .care-audit small { color: var(--muted); }
+.payment-mobile-label { display: none; }
+.care-audit li { border-color: var(--line); }
+.care-audit p { color: var(--muted); }
+.care-dialog {
+  background: var(--panel); color: var(--ink); border-color: var(--line);
+  border-radius: var(--radius); box-shadow: none;
+}
+.care-dialog-inner { padding: 22px; }
+.care-close { background: var(--paper); color: var(--ink); }
+
+.care-radiograph-prompt { display: grid; gap: 12px; padding: 16px; background: var(--accent-tint); border: 1px solid #cddce7; border-radius: var(--radius); }
+.care-radiograph-prompt p, .care-radiograph-prompt small { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.care-radiograph-body form { margin-top: 16px; }
+.care-upload-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.care-upload-footer small { color: var(--muted); }
+.care-radiograph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+.care-radiograph-card { padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); text-align: left; color: var(--ink); }
+.care-radiograph-card:hover { border-color: var(--accent); }
+.care-radiograph-card img { display: block; width: 100%; height: 144px; object-fit: contain; background: #e3e6e8; }
+.care-pdf-preview { display: grid; place-content: center; gap: 7px; height: 144px; background: var(--paper-deep); color: var(--accent-dark); text-align: center; font: 400 26px var(--mono); }
+.care-pdf-preview span { font: 400 12px 'Segoe UI', system-ui, sans-serif; }
+.care-radiograph-caption { display: grid; gap: 6px; padding: 12px; }
+.care-radiograph-caption strong { font-size: 13px; overflow-wrap: anywhere; }
+.care-radiograph-caption small { font-size: 12px; color: var(--accent-dark); }
+.radiograph-viewer {
+  width: min(1120px, calc(100vw - 28px)); height: min(850px, calc(100dvh - 28px));
+  padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink);
+}
+.radiograph-viewer[open] { display: flex; flex-direction: column; }
+.radiograph-viewer header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.radiograph-viewer header div { min-width: 0; }
+.radiograph-viewer header p { color: var(--brass); font: 500 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+.radiograph-viewer h2 { margin-top: 5px; font-size: 20px; overflow-wrap: anywhere; }
+.radiograph-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 20px; background: var(--paper); font-size: 13px; }
+.radiograph-toolbar label { display: flex; align-items: center; gap: 10px; }
+.radiograph-toolbar input { accent-color: var(--accent); }
+.radiograph-canvas { flex: 1; min-height: 0; background: #e3e6e8; overflow: auto; }
+.radiograph-canvas img { display: block; width: 100%; object-fit: contain; }
+.radiograph-canvas iframe { width: 100%; height: 100%; min-height: 300px; border: 0; }
+
+@media (max-width: 950px) {
+  .care-questionnaire, .care-plan-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .care-navigation { width: 100%; }
+  .care-navigation button { flex: 1; justify-content: center; padding: 8px; font-size: 12px; }
+  .care-navigation button span { display: none; }
+  .care-panel { padding: 15px; }
+  .care-panel-head { flex-wrap: wrap; }
+  .care-panel-head h2 { font-size: 25px; }
+  .care-questionnaire, .care-exam, .care-add-procedure .care-fields, .care-procedure-actions { grid-template-columns: minmax(0, 1fr); }
+  .care-summary-hint { display: block; margin: 5px 0 0; }
+  .care-details > summary { padding: 12px; }
+  .care-details > :not(summary) { margin: 0 12px 12px; }
+  .care-plan-overview > div { padding: 11px; }
+  .care-plan-overview strong, .care-balances dd { font-size: 1rem; }
+  .care-odontogram { padding: 12px; }
+  .care-balances { padding: 10px; }
+  .care-table { display: block; }
+  .care-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .care-table tbody { display: grid; gap: 10px; }
+  .care-table tbody tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+    padding: 13px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  }
+  .care-table tbody td { min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere; }
+  .care-table .payment-patient, .care-table .payment-actions { grid-column: 1 / -1; }
+  .care-table .payment-patient { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .care-table .payment-actions:empty { display: none; }
+  .care-table .payment-actions button { min-height: 38px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 3px; }
+  .payment-mobile-label { display: block; margin-bottom: 4px; color: var(--brass); font: 500 11px var(--mono); }
+}
