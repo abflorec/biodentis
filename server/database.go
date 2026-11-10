@@ -97,7 +97,7 @@ func initDatabase(db *sql.DB, demo bool) error {
 		if _, err := tx.Exec("PRAGMA user_version = 1"); err != nil {
 			return err
 		}
-	case 1, 2:
+	case 1, 2, 3:
 	default:
 		return fmt.Errorf("la versión %d de la base requiere una versión posterior de BIODENTIS", schemaVersion)
 	}
@@ -105,6 +105,11 @@ func initDatabase(db *sql.DB, demo bool) error {
 	if schemaVersion < 2 {
 		if _, err := tx.Exec(schemaV2); err != nil {
 			return fmt.Errorf("actualizar ficha y radiografías: %w", err)
+		}
+	}
+	if schemaVersion < 3 {
+		if _, err := tx.Exec(schemaV3); err != nil {
+			return fmt.Errorf("actualizar caja y miniaturas: %w", err)
 		}
 	}
 
@@ -139,3 +144,13 @@ func initDatabase(db *sql.DB, demo bool) error {
 	}
 	return tx.Commit()
 }
+
+const schemaV3 = `
+CREATE INDEX payments_received_idx ON payments(received_date DESC, id DESC);
+CREATE INDEX audit_occurred_idx ON audit_events(rtrim(occurred_at, 'Z') DESC, id DESC);
+CREATE TABLE radiograph_thumbnails (
+    radiograph_id INTEGER PRIMARY KEY REFERENCES radiographs(id) ON DELETE CASCADE,
+    data BLOB
+);
+PRAGMA user_version = 3;
+`

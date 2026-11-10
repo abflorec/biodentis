@@ -5,7 +5,6 @@ const monthFormat = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'num
 const weekdays = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 const dayKeys: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
 
-const syncers = new WeakMap<HTMLInputElement, () => void>();
 let popover: HTMLElement | undefined;
 let activeInput: HTMLInputElement | undefined;
 let viewYear = 0;
@@ -64,7 +63,7 @@ function decorate(input: HTMLInputElement): void {
   input.setAttribute('aria-expanded', 'false');
 
   const sync = (): void => { value.textContent = formatValue(input.value); };
-  syncers.set(input, sync);
+  input.addEventListener('change', sync);
   sync();
 
   input.addEventListener('click', () => {
@@ -197,7 +196,6 @@ function choose(value: string): void {
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
-  syncers.get(input)?.();
   close(true);
 }
 

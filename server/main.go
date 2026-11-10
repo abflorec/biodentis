@@ -32,13 +32,14 @@ type server struct {
 	dataDir         string
 	demo            bool
 	authMu          sync.Mutex
+	thumbnailMu     sync.Mutex
 	sessions        map[string]loginSession
 	failures        int
 	retryAfter      time.Time
 	passwordVersion uint64
 }
 
-func main() {
+func runWeb() {
 	demo := flag.Bool("demo", false, "Habilita una base de demostración para datos ficticios")
 	port := flag.Int("port", 8090, "Puerto en 127.0.0.1")
 	data := flag.String("data", "", "Ruta a la carpeta privada de datos")
@@ -66,12 +67,7 @@ func main() {
 
 	s := &server{db: db, dataDir: dataDir, demo: *demo, sessions: make(map[string]loginSession)}
 	address := net.JoinHostPort("127.0.0.1", strconv.Itoa(*port))
-	httpServer := &http.Server{
-		Addr: address, Handler: s.routes(),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       25 * time.Second, WriteTimeout: 35 * time.Second,
-		IdleTimeout: 60 * time.Second,
-	}
+	httpServer := localHTTPServer(s.routes())
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("No se pudo iniciar BIODENTIS en %s: %v", address, err)
@@ -91,6 +87,16 @@ func main() {
 	}()
 	if err := httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Print(err)
+	}
+}
+
+func localHTTPServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       25 * time.Second,
+		WriteTimeout:      35 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 }
 

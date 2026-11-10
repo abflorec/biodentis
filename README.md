@@ -1,14 +1,14 @@
-# BIODENTIS local
+# BIODENTIS Escritorio
 
 Demo funcional para una clínica odontológica de una sede y un equipo. Incluye acceso con usuario y contraseña, agenda, pacientes, historia clínica, odontograma, procedimientos, consentimiento de prueba, radiografías, cobros y auditoría. El ejecutable sirve las pantallas y guarda los datos en SQLite en la misma PC.
 
 ## Abrir la demo
 
-1. En Windows de 64 bits, haz doble clic en `ABRIR-DEMO.cmd`. El iniciador abre [BIODENTIS en el navegador](http://127.0.0.1:8090).
+1. En Windows de 64 bits con Microsoft Edge WebView2 Runtime, abre `ABRIR-ESCRITORIO.cmd` o `bin/BIODENTIS-Escritorio.exe`.
 2. Ingresa con el usuario `biodentis.demo` y la contraseña temporal `BiodentisDemo2026!`.
-3. Trabaja con datos ficticios. La demo crea la base `demo-data` en la primera ejecución y conserva los cambios entre sesiones. Si cambias la contraseña, seguirá vigente al volver a abrir la demo.
+3. Trabaja con datos ficticios. La demo crea su base en `%LOCALAPPDATA%\BIODENTIS\EscritorioDemo\datos` y conserva los cambios entre sesiones. Si cambias la contraseña, seguirá vigente al volver a abrir la demo.
 
-El paquete se entrega con `bin/BIODENTIS.exe` y funciona sin internet. Para iniciar en una terminal visible desde esta carpeta, ejecuta `.\bin\BIODENTIS.exe -demo -port 8090 -data demo-data` y abre la misma dirección en el navegador.
+La demo compilada funciona sin internet. Los requisitos, la arquitectura y las etapas de migración están en [PLAN-ESCRITORIO.md](PLAN-ESCRITORIO.md).
 
 ## Guion para mostrar al cliente
 
@@ -24,13 +24,11 @@ El paquete se entrega con `bin/BIODENTIS.exe` y funciona sin internet. Para inic
 Se usan Go, Node.js y npm para compilar. El ejecutable final incluye la interfaz.
 
 ```powershell
-npm ci
-npm run build
-go test ./...
-go build -trimpath -o bin/BIODENTIS.exe ./server
+powershell -ExecutionPolicy RemoteSigned -File .\scripts\compilar-escritorio.ps1
+go test -tags desktop ./...
 ```
 
-El consentimiento imprimible es una plantilla de demostración. La revisión del formato con BIODENTIS, el instalador con arranque automático, la recuperación de respaldos corresponden a las fases posteriores descritas en el plan de trabajo.
+El consentimiento imprimible es una plantilla de demostración. La revisión del formato con BIODENTIS, el instalador y la recuperación de respaldos corresponden a las fases posteriores del plan de trabajo.
 
 
 ## Ajustes de la ficha · noviembre 2026
@@ -40,5 +38,5 @@ El consentimiento imprimible es una plantilla de demostración. La revisión del
 - Antecedentes: **No** por defecto y **Sí** cuando corresponde. Al guardar se registran las doce respuestas. Las respuestas positivas existentes se mantienen; los campos antiguos vacíos se presentan como No y se normalizan al guardar.
 - La ficha se organiza en **Atención clínica** y **Tratamientos y pagos**. Cambiar entre estos apartados no borra lo escrito.
 - Al elegir un procedimiento aparece una opción para adjuntar una radiografía inicial. Ortodoncia fija incluye **brackets** y muestra automáticamente la sección de radiografías en el procedimiento guardado.
-- Cada procedimiento puede guardar varios JPG, PNG o PDF (hasta 8 MB por archivo). Las imágenes se abren con zoom y los PDF en otra pestaña. Los archivos se guardan en la base local, exigen sesión iniciada y generan un evento de auditoría. Los reintentos del mismo archivo no crean duplicados en el mismo procedimiento.
+- Cada procedimiento puede guardar varios JPG, PNG o PDF (hasta 8 MB por archivo). Las imágenes y los PDF se abren en la ventana de la app. Los archivos se guardan en la base local, exigen sesión iniciada y generan un evento de auditoría. Los reintentos del mismo archivo no crean duplicados en el mismo procedimiento.
 - El visor de esta demo permite consultar archivos exportados; no incluye DICOM, mediciones ni procesamiento de imágenes.

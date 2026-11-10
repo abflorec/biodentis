@@ -133,10 +133,14 @@ func (s *server) registerCare(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/procedures/{id}/radiographs", s.listRadiographs)
 	mux.HandleFunc("POST /api/procedures/{id}/radiographs", s.uploadRadiograph)
 	mux.HandleFunc("GET /api/radiographs/{id}", s.downloadRadiograph)
+	mux.HandleFunc("GET /api/radiographs/{id}/thumbnail", s.downloadRadiographThumbnail)
 	mux.HandleFunc("GET /api/payments", s.listPayments)
 	mux.HandleFunc("POST /api/procedures/{id}/payments", s.createPayment)
 	mux.HandleFunc("POST /api/payments/{id}/void", s.voidPayment)
 	mux.HandleFunc("GET /api/audit", s.listCareAudit)
+	mux.HandleFunc("GET /api/cash/summary", s.cashTotals)
+	mux.HandleFunc("GET /api/cash/payments", s.cashPayments)
+	mux.HandleFunc("GET /api/cash/audit", s.cashAudit)
 }
 
 func careID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -439,8 +443,16 @@ func writeCareAudit(ctx context.Context, tx *sql.Tx, username, action, entity st
 	return err
 }
 
+const auditSelect = "SELECT id, action, entity, entity_id, username, occurred_at, detail FROM audit_events"
+
+func scanAudit(row scanner) (auditEvent, error) {
+	var event auditEvent
+	err := row.Scan(&event.ID, &event.Action, &event.Entity, &event.EntityID, &event.Username, &event.At, &event.Detail)
+	return event, err
+}
+
 func (s *server) listCareAudit(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), "SELECT id, action, entity, entity_id, username, occurred_at, detail FROM audit_events ORDER BY id DESC")
+	rows, err := s.db.QueryContext(r.Context(), auditSelect+" ORDER BY id DESC")
 	if err != nil {
 		careInternal(w, err)
 		return
@@ -448,8 +460,8 @@ func (s *server) listCareAudit(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	events := []auditEvent{}
 	for rows.Next() {
-		var event auditEvent
-		if err := rows.Scan(&event.ID, &event.Action, &event.Entity, &event.EntityID, &event.Username, &event.At, &event.Detail); err != nil {
+		event, err := scanAudit(rows)
+		if err != nil {
 			careInternal(w, err)
 			return
 		}

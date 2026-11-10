@@ -311,6 +311,10 @@
 .care-cash-metrics span { color: #52525f; font-size: 13px; font-weight: 650; }
 .care-cash-metrics strong { color: #22222a; font-size: 27px; line-height: 1.15; letter-spacing: -.04em; }
 .care-cash-metrics small { color: #666670; font-size: 11px; }
+.care-cash-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.care-cash-presets, .care-cash-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.care-cash-presets button[aria-pressed="true"] { color: var(--accent-dark); border-color: var(--accent); background: var(--accent-tint); }
+.care-cash-pager { justify-content: flex-end; margin-top: 12px; color: var(--muted); font-size: 13px; }
 .care-audit { margin: 0; padding: 0; list-style: none; }
 .care-audit li {
   display: grid;

@@ -1,4 +1,6 @@
 import { attachRadiograph, bindRadiographs, validateRadiograph } from './radiographs';
+import { inDesktop, showDesktopDocument } from './desktop';
+import { dateShift } from './registry';
 import { api, errorMessage, escapeHtml, localDate, money, notify } from './shared';
 import './care.css';
 
@@ -567,6 +569,14 @@ export async function renderPatientCare(container: HTMLElement, patientId: numbe
       row.querySelector<HTMLButtonElement>('[data-abono]')?.addEventListener('click', () => pay(procedure, false, reloadProcedures));
       row.querySelector<HTMLButtonElement>('[data-settle]')?.addEventListener('click', () => pay(procedure, true, reloadProcedures));
       control<HTMLButtonElement>(row, '[data-print]').onclick = () => consentSheet(patient, procedure);
+      const consent = row.querySelector<HTMLAnchorElement>('.care-file');
+      if (inDesktop && consent) {
+        consent.removeAttribute('target');
+        consent.addEventListener('click', (event) => {
+          event.preventDefault();
+          showDesktopDocument(`/api/procedures/${procedure.id}/consent`, procedure.consentName, consent);
+        });
+      }
       const attachment = control<HTMLFormElement>(row, '.care-attach');
       bindForm(attachment, async (data) => {
         await api<Procedure>(`/api/procedures/${procedure.id}/consent`, { method: 'POST', body: data });
@@ -636,28 +646,128 @@ export async function renderPatientCare(container: HTMLElement, patientId: numbe
   showProcedures();
 }
 
+type CashRange = { from: string; to: string };
+type CashPage<T> = { items: T[]; nextCursor?: string };
+type CashSummary = { collectedCents: number; activePayments: number };
+
+function auditRows(audits: Audit[]): string {
+  return audits.length ? `<ol class="care-audit">${audits.map(audit => `<li>
+    <div><strong>${escapeHtml(auditLabels[audit.action] || audit.action.replaceAll('_', ' '))}</strong>
+      <small>${escapeHtml(audit.username)} · ${escapeHtml(dateTimeLabel(audit.at))}</small></div>
+    <p>${escapeHtml(audit.detail)}</p></li>`).join('')}</ol>` : '<p class="care-empty">No hay actividad en este período.</p>';
+}
+
 export async function renderCash(container: HTMLElement): Promise<void> {
-  const [paymentData, auditData] = await Promise.all([api<Payment[]>('/api/payments'), api<Audit[]>('/api/audit')]);
-  const payments = paymentData || [];
-  const audits = auditData || [];
-  const today = localDate();
-  const collected = payments.filter((payment) => payment.receivedDate === today && !payment.voidedAt);
-  const total = collected.reduce((sum, payment) => sum + payment.amountCents, 0);
+  const initialDate = localDate();
+  let range = { from: initialDate, to: initialDate };
+  let busy = false;
   container.innerHTML = `<div class="care-cash-layout">
-    <section class="care-cash-metrics" aria-label="Resumen de caja">
-      <div><span>Cobrado hoy</span><strong>${escapeHtml(money(total))}</strong><small>Fecha de recepción · ${escapeHtml(dateLabel(today))}</small></div>
-      <div><span>Movimientos del día</span><strong>${collected.length}</strong><small>Cobros vigentes</small></div>
-    </section>
+    <form class="care-panel care-form" aria-label="Período de caja">
+      <fieldset class="care-cash-filter">
+        <div class="care-cash-presets">
+          <button type="button" class="care-button secondary" data-days="1" aria-pressed="true">Hoy</button>
+          <button type="button" class="care-button secondary" data-days="30" aria-pressed="false">Últimos 30 días</button>
+        </div>
+        <label>Desde<input type="date" name="from" value="${initialDate}" required></label>
+        <label>Hasta<input type="date" name="to" value="${initialDate}" required></label>
+        <button type="submit" class="care-button">Aplicar rango</button>
+      </fieldset>
+    </form>
+    <p class="care-empty" data-cash-loading role="status" hidden>Cargando caja…</p>
+    <p class="care-form-error" data-cash-error role="alert" hidden></p>
+    <section class="care-cash-metrics" aria-label="Resumen de caja" data-cash-summary></section>
     <section class="care-panel"><div class="care-panel-head"><div><p class="care-kicker">Caja</p><h2>Movimientos</h2></div></div>
-      ${paymentRows(payments, true)}
+      <div data-cash-payments></div>
     </section>
     <section class="care-panel"><div class="care-panel-head"><div><p class="care-kicker">Registro de cambios</p><h2>Pista de auditoría</h2></div></div>
-      ${audits.length ? `<ol class="care-audit">${audits.map((audit) => `<li>
-        <div><strong>${escapeHtml(auditLabels[audit.action] || audit.action.replaceAll('_', ' '))}</strong>
-          <small>${escapeHtml(audit.username)} · ${escapeHtml(dateTimeLabel(audit.at))}</small></div>
-        <p>${escapeHtml(audit.detail)}</p></li>`).join('')}</ol>` : '<p class="care-empty">Aún no hay actividad registrada.</p>'}
+      <div data-cash-audit></div>
     </section>
   </div>`;
-  bindVoidButtons(container, () => renderCash(container));
+  const form = control<HTMLFormElement>(container, 'form');
+  const filters = control<HTMLFieldSetElement>(form, 'fieldset');
+  const presetButtons = form.querySelectorAll<HTMLButtonElement>('[data-days]');
+  const summary = control(container, '[data-cash-summary]');
+  const payments = control(container, '[data-cash-payments]');
+  const audit = control(container, '[data-cash-audit]');
+  const loading = control(container, '[data-cash-loading]');
+  const error = control(container, '[data-cash-error]');
+
+  async function run(action: () => Promise<void>): Promise<void> {
+    if (busy || !container.isConnected) return;
+    busy = filters.disabled = payments.inert = audit.inert = true;
+    loading.hidden = false;
+    error.hidden = true;
+    try {
+      await action();
+    } catch (failure) {
+      error.textContent = errorMessage(failure);
+      error.hidden = false;
+    } finally {
+      busy = filters.disabled = payments.inert = audit.inert = false;
+      loading.hidden = true;
+    }
+  }
+
+  function cashURL(endpoint: string, dates: CashRange, before = ''): string {
+    const params = new URLSearchParams(dates);
+    if (before) params.set('before', before);
+    return `/api/cash/${endpoint}?${params}`;
+  }
+
+  function showPage<T>(target: HTMLElement, endpoint: 'payments' | 'audit', result: CashPage<T>, cursors: string[], rows: (items: T[]) => string): void {
+    target.innerHTML = rows(result.items) + `<nav class="care-cash-pager" aria-label="Páginas de ${endpoint === 'payments' ? 'movimientos' : 'auditoría'}">
+      <button type="button" class="care-button secondary" data-page-prev ${cursors.length === 1 ? 'disabled' : ''}>Anterior</button>
+      <span role="status">Página ${cursors.length}</span>
+      <button type="button" class="care-button secondary" data-page-next ${result.nextCursor ? '' : 'disabled'}>Siguiente</button>
+    </nav>`;
+    const changePage = async (next: string[], focus: string) => {
+      await run(async () => {
+        const page = await api<CashPage<T>>(cashURL(endpoint, range, next.at(-1)));
+        if (container.isConnected) showPage(target, endpoint, page, next, rows);
+      });
+      (target.querySelector<HTMLButtonElement>(`${focus}:not(:disabled)`)
+        ?? target.querySelector<HTMLButtonElement>('.care-cash-pager button:not(:disabled)'))?.focus();
+    };
+    control(target, '[data-page-prev]').onclick = () => void changePage(cursors.slice(0, -1), '[data-page-prev]');
+    control(target, '[data-page-next]').onclick = () => {
+      if (result.nextCursor) void changePage([...cursors, result.nextCursor], '[data-page-next]');
+    };
+    if (endpoint === 'payments') bindVoidButtons(target, () => loadRange(range));
+  }
+
+  async function loadRange(dates: CashRange, preset?: HTMLButtonElement | null): Promise<void> {
+    await run(async () => {
+      const [totals, movements, events] = await Promise.all([
+        api<CashSummary>(cashURL('summary', dates)),
+        api<CashPage<Payment>>(cashURL('payments', dates)),
+        api<CashPage<Audit>>(cashURL('audit', dates))
+      ]);
+      if (!container.isConnected) return;
+      range = dates;
+      if (preset !== undefined) {
+        presetButtons.forEach(button => button.setAttribute('aria-pressed', String(button === preset)));
+      }
+      const period = dates.from === dates.to ? dateLabel(dates.from) : `${dateLabel(dates.from)} – ${dateLabel(dates.to)}`;
+      summary.innerHTML = `<div><span>Cobrado en el período</span><strong>${escapeHtml(money(totals.collectedCents))}</strong><small>${escapeHtml(period)}</small></div>
+        <div><span>Movimientos vigentes</span><strong>${totals.activePayments}</strong><small>Según la fecha de recepción</small></div>`;
+      showPage(payments, 'payments', movements, [''], items => items.length ? paymentRows(items, true) : '<p class="care-empty">No hay cobros en este período.</p>');
+      showPage(audit, 'audit', events, [''], auditRows);
+    });
+  }
+
+  const from = control<HTMLInputElement>(form, '[name="from"]');
+  const to = control<HTMLInputElement>(form, '[name="to"]');
+  presetButtons.forEach(button => button.onclick = () => {
+    const today = localDate();
+    from.value = dateShift(today, 1 - Number(button.dataset.days));
+    to.value = today;
+    for (const input of [from, to]) input.dispatchEvent(new Event('change', { bubbles: true }));
+    void loadRange({ from: from.value, to: to.value }, button);
+  });
+  form.onsubmit = event => {
+    event.preventDefault();
+    void loadRange({ from: from.value, to: to.value }, null);
+  };
+  await loadRange(range, presetButtons[0]);
 }
 
